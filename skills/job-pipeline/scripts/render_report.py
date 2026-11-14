@@ -33,7 +33,7 @@ TEMPLATE = """<style>
   <select id="co"><option value="">All companies</option></select>
  </div>
  <div class="n" id="count"></div>
- <table><thead><tr><th data-k="score">Score</th><th data-k="company">Company</th><th data-k="title">Role</th><th data-k="location">Location</th><th>Why</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+ <table><thead><tr><th data-k="score">Score</th><th data-k="company">Company</th><th data-k="title">Role</th><th data-k="location">Location</th><th data-k="posted">Posted</th><th>Why</th><th></th></tr></thead><tbody id="rows"></tbody></table>
 </div>
 <script>
 const D=__DATA__;
@@ -48,8 +48,8 @@ function draw(){
   .sort((a,b)=>(a[key]>b[key]?1:a[key]<b[key]?-1:0)*dir);
  $("count").textContent=rows.length+" of "+D.length+" postings";
  $("rows").innerHTML=rows.map(r=>`<tr><td><span class="s s${r.score}">${r.score}</span></td><td>${esc(r.company)}</td>
- <td><a href="${esc(r.url)}" target="_blank" rel="noopener" data-u="${esc(r.url)}" class="lk">${esc(r.title)}</a><div class="u">${esc(r.url.replace(/^https?:\\/\\//,"").slice(0,60))}</div></td><td>${esc(r.location.split("|")[0])}</td>
- <td class="why">${esc(r.reason)}</td>
+ <td><a href="${esc(r.url)}" target="_blank" rel="noopener" data-u="${esc(r.url)}" class="lk">${esc(r.title)}</a><div class="u">${esc(r.url.replace(/^https?:\\/\\//,"").slice(0,60))}</div></td><td>${esc(r.location.split("|")[0])}</td><td>${esc(r.posted||"")}</td>
+ <td class="why">${esc(r.reason)}${r.summary?`<div class="u">${esc(r.summary)}</div>`:""}</td>
  <td><button class="cp" data-u="${esc(r.url)}">Copy link</button> <button data-hermes-send="Open this posting in my default browser with the terminal (macOS: open &quot;${esc(r.url)}&quot;): ${esc(r.company)} - ${esc(r.title)}">Open</button> <button data-hermes-send="Using the job-pipeline skill and my private profile, draft tailored talking points for this posting: ${esc(r.company)} - ${esc(r.title)} (${esc(r.url)}). Use only facts in my profile.">Talking points</button></td></tr>`).join("");
 }
 ["q","min","co"].forEach(i=>$(i).addEventListener("input",draw));
@@ -84,7 +84,7 @@ def render(rows, min_score=1, limit=None):
     rows.sort(key=lambda r: -r["score"])
     if limit:
         rows = rows[:limit]
-    keep = ["id", "company", "title", "location", "url", "score", "reason", "status"]
+    keep = ["id", "company", "title", "location", "url", "score", "reason", "status", "posted", "summary"]
     data = [{k: r.get(k, "") for k in keep} for r in rows]
     # "</" must not appear inside a <script> block
     payload = json.dumps(data).replace("</", "<\\/")

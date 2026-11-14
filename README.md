@@ -12,7 +12,7 @@ code does the mechanical work.
 | [`feed-digest`](skills/feed-digest) | Scheduled, de-duplicated RSS/Atom briefing with cited summaries | `fetch_feeds.py` (stdlib) |
 | [`evidence-audit`](skills/evidence-audit) | Gap analysis of a codebase vs. a reference, with graded confidence | report template |
 | [`alert-triage`](skills/alert-triage) | Oncall alert to diagnosis: runbook match, allowlisted read-only diagnostics, approval-gated fixes | `triage_alert.py` (stdlib) |
-| [`job-pipeline`](skills/job-pipeline) | Finds postings from Greenhouse/Lever/Ashby, filters, agent-scored against a private profile, CSV tracker | `fetch_jobs.py`, `tracker.py` (stdlib) |
+| [`job-pipeline`](skills/job-pipeline) | Scans ~9,000 Greenhouse/Lever/Ashby boards into SQLite on a schedule; a small model scores and summarises new matches; alerts only when something new fits | `scan.py`, `jobdb.py`, `jina.py` (stdlib) |
 | [`pr-triage`](skills/pr-triage) | Ranks open PRs by CI, review state, size and age (read-only) | `triage.py` (via `gh`) |
 
 ## Design principles

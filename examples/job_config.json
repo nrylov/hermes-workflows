@@ -133,5 +133,8 @@
     "emea",
     "apac",
     "latam"
-  ]
+  ],
+  "jina_key_file": "~/path/to/jina_key.txt (optional)",
+  "enrich_min_chars": 400,
+  "enrich_max_per_run": 40
 }
