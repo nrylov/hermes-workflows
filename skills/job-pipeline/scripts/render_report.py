@@ -3,7 +3,7 @@
 
 Usage: render_report.py TRACKER.csv OUT.html [--min-score N] [--limit N]
 Designed for the Hermes desktop preview widget: uses the app's theme variables and no
-external assets. Each row has a button that asks the agent for tailored talking points.
+external assets. Each row has Copy link, Open (asks the agent to open it in your browser) and Talking points buttons. The widget sandbox may block plain links, hence the extra buttons.
 """
 import argparse
 import csv
@@ -23,6 +23,7 @@ TEMPLATE = """<style>
 .jp .why{color:var(--muted-foreground)}
 .jp a{color:var(--accent)}
 .jp button{font:inherit;background:none;color:var(--accent);border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer}
+.jp .u{color:var(--muted-foreground);font-size:11px;word-break:break-all}
 .jp .n{color:var(--muted-foreground);margin:6px 0}
 </style>
 <div class="jp">
@@ -47,12 +48,21 @@ function draw(){
   .sort((a,b)=>(a[key]>b[key]?1:a[key]<b[key]?-1:0)*dir);
  $("count").textContent=rows.length+" of "+D.length+" postings";
  $("rows").innerHTML=rows.map(r=>`<tr><td><span class="s s${r.score}">${r.score}</span></td><td>${esc(r.company)}</td>
- <td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a></td><td>${esc(r.location.split("|")[0])}</td>
+ <td><a href="${esc(r.url)}" target="_blank" rel="noopener" data-u="${esc(r.url)}" class="lk">${esc(r.title)}</a><div class="u">${esc(r.url.replace(/^https?:\\/\\//,"").slice(0,60))}</div></td><td>${esc(r.location.split("|")[0])}</td>
  <td class="why">${esc(r.reason)}</td>
- <td><button data-hermes-send="Using the job-pipeline skill and my private profile, draft tailored talking points for this posting: ${esc(r.company)} - ${esc(r.title)} (${esc(r.url)}). Use only facts in my profile.">Talking points</button></td></tr>`).join("");
+ <td><button class="cp" data-u="${esc(r.url)}">Copy link</button> <button data-hermes-send="Open this posting in my default browser with the terminal (macOS: open &quot;${esc(r.url)}&quot;): ${esc(r.company)} - ${esc(r.title)}">Open</button> <button data-hermes-send="Using the job-pipeline skill and my private profile, draft tailored talking points for this posting: ${esc(r.company)} - ${esc(r.title)} (${esc(r.url)}). Use only facts in my profile.">Talking points</button></td></tr>`).join("");
 }
 ["q","min","co"].forEach(i=>$(i).addEventListener("input",draw));
 document.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{const k=th.dataset.k;dir=(k===key)?-dir:(k==="score"?-1:1);key=k;draw()});
+function copy(u,btn){
+ const done=()=>{const t=btn.textContent;btn.textContent="Copied";setTimeout(()=>btn.textContent=t,1200)};
+ const fb=()=>{const a=document.createElement("textarea");a.value=u;document.body.appendChild(a);a.select();try{document.execCommand("copy");done()}catch(e){btn.textContent="Select URL below"}a.remove()};
+ if(navigator.clipboard){navigator.clipboard.writeText(u).then(done,fb)}else fb();
+}
+$("rows").addEventListener("click",e=>{
+ const b=e.target.closest(".cp");if(b){copy(b.dataset.u,b);return}
+ const a=e.target.closest("a.lk");if(a){const w=window.open(a.dataset.u,"_blank");if(w){e.preventDefault()}}
+});
 draw();
 </script>
 """
