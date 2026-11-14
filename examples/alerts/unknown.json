@@ -1,0 +1,5 @@
+{
+  "name": "MysteryAlert",
+  "host": "web-01",
+  "severity": "ticket"
+}

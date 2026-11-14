@@ -1,0 +1,112 @@
+{
+  "allowlist": [
+    [
+      "df"
+    ],
+    [
+      "du",
+      "-sh"
+    ],
+    [
+      "ls",
+      "-lh"
+    ],
+    [
+      "uptime"
+    ],
+    [
+      "ps"
+    ]
+  ],
+  "entries": [
+    {
+      "alert": "HighDiskUsage",
+      "diagnostics": [
+        [
+          "df",
+          "-h",
+          "/var"
+        ],
+        [
+          "du",
+          "-sh",
+          "/var/log"
+        ],
+        [
+          "ls",
+          "-lh",
+          "/var/log/app"
+        ]
+      ],
+      "hypotheses": [
+        {
+          "cause": "Unrotated application logs",
+          "evidence": [
+            "app.log.1",
+            "/var/log/app"
+          ]
+        },
+        {
+          "cause": "Core dumps filling disk",
+          "evidence": [
+            "core."
+          ]
+        }
+      ],
+      "remediation": [
+        {
+          "description": "Force log rotation",
+          "argv": [
+            "logrotate",
+            "-f",
+            "/etc/logrotate.d/app"
+          ]
+        },
+        {
+          "description": "Compress logs older than 7 days",
+          "argv": [
+            "find",
+            "/var/log/app",
+            "-mtime",
+            "+7",
+            "-exec",
+            "gzip",
+            "{}",
+            ";"
+          ]
+        }
+      ]
+    },
+    {
+      "alert": "HighLoad",
+      "diagnostics": [
+        [
+          "uptime"
+        ],
+        [
+          "ps",
+          "aux",
+          "--sort=-%cpu"
+        ]
+      ],
+      "hypotheses": [
+        {
+          "cause": "Runaway process",
+          "evidence": [
+            "99."
+          ]
+        }
+      ],
+      "remediation": [
+        {
+          "description": "Restart the offending service",
+          "argv": [
+            "systemctl",
+            "restart",
+            "worker"
+          ]
+        }
+      ]
+    }
+  ]
+}

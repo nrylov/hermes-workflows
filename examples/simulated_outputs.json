@@ -1,0 +1,5 @@
+{
+  "df -h /var": "Filesystem  Size  Used Avail Use% Mounted on\n/dev/sda2    50G   47G  3.0G  94% /var",
+  "du -sh /var/log": "41G\t/var/log",
+  "ls -lh /var/log/app": "-rw-r--r-- 1 app app 2.1G Nov 13 20:01 app.log\n-rw-r--r-- 1 app app  19G Nov 12 00:00 app.log.1\n-rw-r--r-- 1 app app  18G Nov 11 00:00 app.log.2"
+}

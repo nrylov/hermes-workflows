@@ -1,0 +1,6 @@
+{
+  "name": "HighDiskUsage",
+  "host": "web-03",
+  "severity": "page",
+  "detail": "/var at 94%"
+}
