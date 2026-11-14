@@ -1,8 +1,10 @@
 import csv
 import importlib.util
+import json
 import os
 import tempfile
 import unittest
+from datetime import datetime, timezone
 
 base = os.path.join(os.path.dirname(__file__), "..", "skills", "job-pipeline", "scripts")
 
@@ -14,7 +16,7 @@ def load(name):
     return m
 
 
-fj, tr, rr = load("fetch_jobs"), load("tracker"), load("render_report")
+fj, tr, rr, bc = load("fetch_jobs"), load("tracker"), load("render_report"), load("build_company_list")
 
 CFG = {"title_include": ["sre", "infrastructure"], "title_exclude": ["manager", "intern"],
        "locations_include": ["remote", "san francisco"]}
@@ -37,9 +39,68 @@ class JobTests(unittest.TestCase):
 
     def test_location_filters(self):
         self.assertTrue(fj.location_ok({"location": "Remote - US", "remote": None}, ["remote"]))
-        self.assertTrue(fj.location_ok({"location": "Berlin", "remote": True}, ["remote"]))
+        self.assertFalse(fj.location_ok({"location": "Berlin", "remote": True}, ["remote"]))
+        self.assertTrue(fj.location_ok({"location": "", "remote": True}, ["remote"]))
+        self.assertTrue(fj.location_ok({"location": "Remote", "remote": True}, ["remote"]))
+        self.assertTrue(fj.location_ok({"location": "United States (Remote)", "remote": True}, ["remote"]))
+        self.assertTrue(fj.location_ok({"location": "Remote - US", "remote": None}, ["remote"]))
+        self.assertFalse(fj.location_ok({"location": "Sweden (Remote)", "remote": True}, ["remote"]))
+        self.assertFalse(fj.location_ok({"location": "Remote - Poland", "remote": None}, ["remote"], ["poland"]))
         self.assertFalse(fj.location_ok({"location": "Berlin", "remote": False}, ["remote", "san francisco"]))
+        self.assertTrue(fj.location_ok({"location": "San Francisco, CA | NYC", "remote": False}, ["remote", "san francisco"]))
         self.assertTrue(fj.location_ok({"location": "x", "remote": False}, []))
+
+    def test_age_filter_and_newest_first(self):
+        now = datetime(2026, 11, 13, tzinfo=timezone.utc)
+        cfg = dict(CFG, max_age_days=7)
+        raw = {"jobs": [
+            {"id": "n", "title": "SRE", "location": "Remote", "isRemote": True, "publishedAt": "2026-11-12T00:00:00Z", "descriptionPlain": ""},
+            {"id": "o", "title": "SRE", "location": "Remote", "isRemote": True, "publishedAt": "2026-10-01T00:00:00Z", "descriptionPlain": ""},
+            {"id": "u", "title": "SRE", "location": "Remote", "isRemote": True, "descriptionPlain": ""}]}
+        jobs = fj.fetch_company({"name": "co", "ats": "ashby"}, cfg, fetcher=lambda u: raw, now=now)
+        self.assertEqual(sorted(j["id"] for j in jobs), ["ab:co:n", "ab:co:u"])  # old dropped, undated kept
+
+    def test_generic_title_needs_description_evidence(self):
+        cfg = dict(CFG, title_generic=["software engineer"], description_keywords=["envoy", "xds", "grpc"], min_keyword_hits=2)
+        raw = {"jobs": [
+            {"id": "a", "title": "Software Engineer", "location": "Remote", "isRemote": True, "descriptionPlain": "We use Envoy and xDS"},
+            {"id": "b", "title": "Software Engineer", "location": "Remote", "isRemote": True, "descriptionPlain": "React and CSS"}]}
+        jobs = fj.fetch_company({"name": "co", "ats": "ashby"}, cfg, fetcher=lambda u: raw)
+        self.assertEqual([j["id"] for j in jobs], ["ab:co:a"])
+
+    def test_lever_eu_region_host(self):
+        urls = []
+        fj.fetch_company({"name": "co", "ats": "lever", "region": "eu"}, CFG, fetcher=lambda u: urls.append(u) or [])
+        self.assertIn("api.eu.lever.co", urls[0])
+
+    def test_load_companies_merges_and_dedupes(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "c.json")
+            with open(p, "w") as f:
+                json.dump([{"name": "Acme", "ats": "lever"}, {"name": "x", "ats": "ashby"}], f)
+            cs = fj.load_companies({"companies": [{"name": "acme", "ats": "lever"}], "companies_file": p})
+            self.assertEqual(len(cs), 2)
+
+    def test_tracked_ids_missing_file(self):
+        self.assertEqual(fj.tracked_ids("/nonexistent/t.csv"), set())
+
+    def test_directory_parse_keeps_ok_supported_only(self):
+        lines = ['{"provider":"greenhouse","slug":"A","status":"ok"}', '{"provider":"greenhouse","slug":"A","status":"ok"}',
+                 '{"provider":"lever","slug":"b","region":"eu","status":"ok"}', '{"provider":"ashby","slug":"c","status":"dead"}',
+                 '{"provider":"rippling","slug":"d","status":"ok"}', ""]
+        self.assertEqual(bc.parse_rows(lines), [{"name": "A", "ats": "greenhouse"}, {"name": "b", "ats": "lever", "region": "eu"}])
+
+    def test_merge_skips_known_case_insensitive(self):
+        self.assertEqual(bc.merge([{"name": "A", "ats": "lever"}], [{"name": "a", "ats": "lever"}, {"name": "b", "ats": "lever"}]),
+                         [{"name": "A", "ats": "lever"}, {"name": "b", "ats": "lever"}])
+
+    def test_probe_uses_status(self):
+        import io
+        ok = lambda req, timeout: io.BytesIO(b"{}")
+        def bad(req, timeout):
+            raise OSError("404")
+        self.assertTrue(bc.probe("ashby", "x", opener=ok))
+        self.assertFalse(bc.probe("ashby", "x", opener=bad))
 
     def test_greenhouse_fetches_detail_only_for_survivors(self):
         calls = []

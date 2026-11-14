@@ -13,9 +13,9 @@ metadata:
 
 # Job Pipeline Skill
 
-Deterministic code finds and filters postings from public ATS APIs
-(Greenhouse, Lever, Ashby); the agent scores fit against the user's profile and
-writes a short digest. Nothing is ever submitted: no applications, no messages.
+Deterministic code searches public ATS boards (Greenhouse, Lever, Ashby; thousands
+of companies), keeps only recent postings that fit, and returns them newest first.
+The agent scores fit against the user's profile and writes a short digest. Nothing is ever submitted: no applications, no messages.
 
 ## When to Use
 
@@ -26,19 +26,25 @@ Don't use for: auto-applying, scraping logged-in sites, or contacting recruiters
 ## Prerequisites
 
 - A private working dir (default `~/.hermes/job-pipeline/`, never committed) with:
-  - `config.json`: companies, title/location filters (see `examples/job_config.json`)
+  - `config.json`: filters, `max_age_days`, and `companies_file` (see `examples/job_config.json`)
+  - `companies.json`: boards to search, built by `scripts/build_company_list.py`
   - `profile.md`: the user's background, target roles, deal-breakers
-  - `seen.json` and `tracker.csv`: created by the scripts
+  - `tracker.csv`: created by `scripts/tracker.py`; a posting counts as seen once it is here
 - Python 3.8+, stdlib only.
 
 ## How to Run
 
-`terminal(command="python3 skills/job-pipeline/scripts/fetch_jobs.py ~/.hermes/job-pipeline/config.json --seen-file ~/.hermes/job-pipeline/seen.json")`
+One-time setup: `terminal(command="python3 skills/job-pipeline/scripts/build_company_list.py ~/.hermes/job-pipeline/companies.json")`
+
+Each run: `terminal(command="python3 skills/job-pipeline/scripts/fetch_jobs.py ~/.hermes/job-pipeline/config.json --tracker ~/.hermes/job-pipeline/tracker.csv")`
+
+Stderr reports `unscored matches: N, returning M`. If N > M, repeat the fetch -> score -> track
+loop (up to 3 batches per run); the next batch is the next-newest unscored postings.
 
 ## Procedure
 
-1. Run the fetcher. Completion: exit 0 and a JSON list (possibly empty).
-   Stderr `skip` lines are boards that failed; mention them, don't retry in a loop.
+1. Run the fetcher. Completion: exit 0 and a JSON list (possibly empty), newest first.
+   `boards failed: N` on stderr is normal (dead boards); mention it only if it is large.
 2. Optional breadth: for boards without a public API, `web_search` queries like
    `"site:jobs.lever.co OR site:boards.greenhouse.io <role> remote"`. Treat results as
    unverified until the posting URL is opened with `web_extract`.
@@ -58,11 +64,16 @@ Don't use for: auto-applying, scraping logged-in sites, or contacting recruiters
 
 ## Pitfalls
 
-- Greenhouse list view has no description; the fetcher filters on title/location
-  first, then fetches detail only for survivors, to avoid hundreds of requests.
+- Greenhouse list view has no description; the fetcher filters on age/title/location
+  first, then fetches detail only for survivors, to avoid thousands of requests.
+- Generic titles ("Software Engineer") pass only if the description contains at least
+  `min_keyword_hits` of `description_keywords`; tune both in config.
+- Remote postings count only when the location is plain "Remote" or US-looking, so
+  "Remote - Poland" is dropped. Add regions to `locations_exclude` as needed.
+- Scored postings are never re-shown (tracker dedupe). Unscored ones return next run.
 - A 404 for a company means a wrong board token or a different ATS; fix the config.
-- Posting dates are the board's own; `seen.json` is what prevents repeats.
-- Keep `config.json`, `profile.md`, and `tracker.csv` out of any public repo.
+- Posting dates are the board's own; undated postings are kept.
+- Keep `config.json`, `companies.json`, `profile.md`, and `tracker.csv` out of any public repo.
 
 ## Verification
 

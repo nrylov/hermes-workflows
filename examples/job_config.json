@@ -5,15 +5,7 @@
       "ats": "greenhouse"
     },
     {
-      "name": "cloudflare",
-      "ats": "greenhouse"
-    },
-    {
       "name": "openai",
-      "ats": "ashby"
-    },
-    {
-      "name": "ramp",
       "ats": "ashby"
     },
     {
@@ -28,8 +20,26 @@
     "platform",
     "traffic",
     "networking",
+    "\\bnetwork\\b",
     "agent",
-    "developer productivity"
+    "developer productivity",
+    "developer experience",
+    "devops",
+    "reliability",
+    "production engineer",
+    "distributed",
+    "backend",
+    "back-end",
+    "systems engineer",
+    "cloud",
+    "observability",
+    "kubernetes",
+    "control plane",
+    "\\bml infra",
+    "\\bllm\\b",
+    "\\bmcp\\b",
+    "devtools",
+    "developer tools"
   ],
   "title_exclude": [
     "\\bintern\\b",
@@ -48,8 +58,13 @@
     "sourcing",
     "communications",
     "quality engineer",
-    "\\blead\\b",
-    "\\bcost\\b"
+    "\\bcost\\b",
+    "policy",
+    "\\bdeals\\b",
+    "accounting",
+    "financial",
+    "executive",
+    "technician"
   ],
   "locations_include": [
     "remote",
@@ -60,6 +75,63 @@
     "menlo park",
     "sunnyvale"
   ],
-  "max_per_run": 25,
-  "description_chars": 3000
+  "max_per_run": 40,
+  "description_chars": 3000,
+  "max_age_days": 7,
+  "title_generic": [
+    "software engineer",
+    "\\bswe\\b",
+    "engineer"
+  ],
+  "description_keywords": [
+    "envoy",
+    "xds",
+    "kubernetes",
+    "grpc",
+    "load balanc",
+    "service mesh",
+    "oncall",
+    "on-call",
+    "sre",
+    "control plane",
+    "observability",
+    "prometheus",
+    "golang",
+    " go ",
+    "bgp",
+    "mcp",
+    "llm agent",
+    "ai agent",
+    "agentic"
+  ],
+  "min_keyword_hits": 3,
+  "locations_exclude": [
+    "india",
+    "united kingdom",
+    "london",
+    "germany",
+    "berlin",
+    "poland",
+    "warsaw",
+    "ireland",
+    "dublin",
+    "canada",
+    "toronto",
+    "singapore",
+    "australia",
+    "sydney",
+    "brazil",
+    "mexico",
+    "japan",
+    "tokyo",
+    "france",
+    "paris",
+    "netherlands",
+    "amsterdam",
+    "spain",
+    "israel",
+    "emea",
+    "apac",
+    "latam"
+  ]
 }
