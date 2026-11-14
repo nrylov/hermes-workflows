@@ -1,0 +1,65 @@
+{
+  "companies": [
+    {
+      "name": "anthropic",
+      "ats": "greenhouse"
+    },
+    {
+      "name": "cloudflare",
+      "ats": "greenhouse"
+    },
+    {
+      "name": "openai",
+      "ats": "ashby"
+    },
+    {
+      "name": "ramp",
+      "ats": "ashby"
+    },
+    {
+      "name": "spotify",
+      "ats": "lever"
+    }
+  ],
+  "title_include": [
+    "site reliability",
+    "\\bsre\\b",
+    "infrastructure",
+    "platform",
+    "traffic",
+    "networking",
+    "agent",
+    "developer productivity"
+  ],
+  "title_exclude": [
+    "\\bintern\\b",
+    "sales",
+    "recruit",
+    "marketing",
+    "\\bmanager\\b",
+    "director",
+    "counsel",
+    "finance",
+    "mechanical",
+    "electrical",
+    "\\banalyst\\b",
+    "hardware",
+    "\\brtl\\b",
+    "sourcing",
+    "communications",
+    "quality engineer",
+    "\\blead\\b",
+    "\\bcost\\b"
+  ],
+  "locations_include": [
+    "remote",
+    "san francisco",
+    "bay area",
+    "mountain view",
+    "palo alto",
+    "menlo park",
+    "sunnyvale"
+  ],
+  "max_per_run": 25,
+  "description_chars": 3000
+}
