@@ -14,7 +14,7 @@ def load(name):
     return m
 
 
-fj, tr = load("fetch_jobs"), load("tracker")
+fj, tr, rr = load("fetch_jobs"), load("tracker"), load("render_report")
 
 CFG = {"title_include": ["sre", "infrastructure"], "title_exclude": ["manager", "intern"],
        "locations_include": ["remote", "san francisco"]}
@@ -84,6 +84,22 @@ class JobTests(unittest.TestCase):
                 rows = list(csv.DictReader(f))
             self.assertEqual([r["id"] for r in rows], ["a", "b"])
             self.assertEqual(rows[0]["status"], "new")
+
+    def test_render_filters_and_escapes_script_end(self):
+        rows = [{"id": "a", "company": "C", "title": "</script><b>x", "location": "l", "url": "u", "score": 5, "reason": "r"},
+                {"id": "b", "company": "C", "title": "low", "location": "l", "url": "u", "score": 2, "reason": "r"}]
+        out = rr.render(rows, min_score=4)
+        self.assertIn('"id": "a"', out)
+        self.assertNotIn('"id": "b"', out)
+        data_line = [l for l in out.splitlines() if l.startswith("const D=")][0]
+        self.assertNotIn("</script>", data_line)
+
+    def test_load_rows_bad_score(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "t.csv")
+            with open(p, "w") as f:
+                f.write("id,company,title,location,url,score,reason,status\na,c,t,l,u,x,r,new\n")
+            self.assertEqual(rr.load_rows(p)[0]["score"], 0)
 
 
 if __name__ == "__main__":

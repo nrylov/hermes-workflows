@@ -49,9 +49,11 @@ Don't use for: auto-applying, scraping logged-in sites, or contacting recruiters
    Violations score 1 regardless of title.
 5. Pipe the scored list into `scripts/tracker.py ~/.hermes/job-pipeline/tracker.csv`.
    Completion: it prints `added N` where N equals the number of new jobs.
-6. Deliver a digest: top picks (score 4-5) with company, title, location, link, and
+6. Render the viewable report: `terminal(command="python3 skills/job-pipeline/scripts/render_report.py ~/.hermes/job-pipeline/tracker.csv ~/.hermes/job-pipeline/report.html --min-score 3")`.
+   In the Hermes desktop app, end the reply with `::preview{file="<absolute path to report.html>"}` on its own line.
+7. Deliver a digest: top picks (score 4-5) with company, title, location, link, and
    the reason; then a one-line count of the rest. If nothing new, say "No new matches".
-7. For a pick the user wants, draft tailored talking points mapped to the posting's
+8. For a pick the user wants, draft tailored talking points mapped to the posting's
    requirements, using only facts in `profile.md`. Never invent experience.
 
 ## Pitfalls
