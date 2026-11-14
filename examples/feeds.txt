@@ -1,0 +1,4 @@
+# One feed per line
+https://hnrss.org/frontpage
+https://simonwillison.net/atom/everything/
+https://github.com/NousResearch/hermes-agent/releases.atom
