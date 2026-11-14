@@ -3,7 +3,7 @@
 
 Usage: render_report.py TRACKER.csv OUT.html [--min-score N] [--limit N]
 Designed for the Hermes desktop preview widget: uses the app's theme variables and no
-external assets. Each row has Copy link, Open (asks the agent to open it in your browser) and Talking points buttons. The widget sandbox may block plain links, hence the extra buttons.
+external assets. Each row has Copy link and Talking points buttons. The widget sandbox may block plain links, and an agent-side `open` would launch the browser on the gateway host (not the user's machine), so there is deliberately no Open button; the Markdown digest links open normally.
 """
 import argparse
 import csv
@@ -50,7 +50,7 @@ function draw(){
  $("rows").innerHTML=rows.map(r=>`<tr><td><span class="s s${r.score}">${r.score}</span></td><td>${esc(r.company)}</td>
  <td><a href="${esc(r.url)}" target="_blank" rel="noopener" data-u="${esc(r.url)}" class="lk">${esc(r.title)}</a><div class="u">${esc(r.url.replace(/^https?:\\/\\//,"").slice(0,60))}</div></td><td>${esc(r.location.split("|")[0])}</td><td>${esc(r.posted||"")}</td>
  <td class="why">${esc(r.reason)}${r.summary?`<div class="u">${esc(r.summary)}</div>`:""}</td>
- <td><button class="cp" data-u="${esc(r.url)}">Copy link</button> <button data-hermes-send="Open this posting in my default browser with the terminal (macOS: open &quot;${esc(r.url)}&quot;): ${esc(r.company)} - ${esc(r.title)}">Open</button> <button data-hermes-send="Using the job-pipeline skill and my private profile, draft tailored talking points for this posting: ${esc(r.company)} - ${esc(r.title)} (${esc(r.url)}). Use only facts in my profile.">Talking points</button></td></tr>`).join("");
+ <td><button class="cp" data-u="${esc(r.url)}">Copy link</button> <button data-hermes-send="Using the job-pipeline skill and my private profile, draft tailored talking points for this posting: ${esc(r.company)} - ${esc(r.title)} (${esc(r.url)}). Use only facts in my profile.">Talking points</button></td></tr>`).join("");
 }
 ["q","min","co"].forEach(i=>$(i).addEventListener("input",draw));
 document.querySelectorAll("th[data-k]").forEach(th=>th.onclick=()=>{const k=th.dataset.k;dir=(k===key)?-dir:(k==="score"?-1:1);key=k;draw()});

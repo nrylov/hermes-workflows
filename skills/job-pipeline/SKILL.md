@@ -81,6 +81,10 @@ All database commands: `python3 skills/job-pipeline/scripts/jobdb.py <cmd> [--db
   `pending` until scored, so a crashed run loses nothing.
 - Keep `config.json`, `companies.json`, `profile.md`, `jobs.db` out of public repos.
 
+- The gateway may run on a different machine from the desktop app. Never `open` a URL from
+  the agent to show the user a page: it opens on the gateway host. Give Markdown links in the
+  reply instead (they open on the user's machine), plus the Copy link button in the report.
+
 ## Verification
 
 - `python3 -m unittest discover tests` passes (offline).
