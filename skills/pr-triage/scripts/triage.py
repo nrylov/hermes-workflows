@@ -31,7 +31,7 @@ def score(pr, now):
     s += 10 if size < 100 else (0 if size < 500 else -10)
     age = (now - datetime.fromisoformat(pr["createdAt"].replace("Z", "+00:00"))).days
     if age > 30:
-        s -= 5
+        return min(s, 10)  # stale PRs rank below anything active
     return s
 
 

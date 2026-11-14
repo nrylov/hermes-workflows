@@ -32,6 +32,11 @@ class TriageTests(unittest.TestCase):
         self.assertGreater(t.score(ready, NOW), t.score(failing, NOW))
         self.assertEqual(t.score(draft, NOW), 0)
 
+    def test_stale_ranks_below_active(self):
+        stale = pr(createdAt="2026-01-01T00:00:00Z")
+        failing = pr(statusCheckRollup=[{"conclusion": "FAILURE"}])
+        self.assertLess(t.score(stale, NOW), t.score(failing, NOW))
+
     def test_buckets(self):
         self.assertEqual(t.bucket(pr(), NOW), "ready to merge")
         self.assertEqual(t.bucket(pr(statusCheckRollup=[{"conclusion": "FAILURE"}]), NOW), "blocked on CI")
