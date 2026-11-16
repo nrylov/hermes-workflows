@@ -46,6 +46,8 @@ class JobTests(unittest.TestCase):
         self.assertTrue(fj.location_ok({"location": "Remote - US", "remote": None}, ["remote"]))
         self.assertFalse(fj.location_ok({"location": "Sweden (Remote)", "remote": True}, ["remote"]))
         self.assertFalse(fj.location_ok({"location": "Remote - Poland", "remote": None}, ["remote"], ["poland"]))
+        self.assertTrue(fj.location_ok({"location": "Remote, Canada; Remote, US", "remote": None}, ["remote"], ["canada"]))
+        self.assertFalse(fj.location_ok({"location": "Remote, Canada", "remote": None}, ["remote"], ["canada"]))
         self.assertFalse(fj.location_ok({"location": "Berlin", "remote": False}, ["remote", "san francisco"]))
         self.assertTrue(fj.location_ok({"location": "San Francisco, CA | NYC", "remote": False}, ["remote", "san francisco"]))
         self.assertTrue(fj.location_ok({"location": "x", "remote": False}, []))

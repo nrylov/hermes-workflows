@@ -91,7 +91,8 @@ def location_ok(job, keywords, exclude=(), remote_hints=REMOTE_HINTS):
     """Accept by location. Remote counts only when the location text is empty/plain "Remote"
     or looks US/anywhere, so "Sweden (Remote)" or isRemote=true + "Ho Chi Minh" are rejected."""
     loc = (job.get("location") or "").lower()
-    if any(x.lower() in loc for x in exclude):
+    # an excluded region only rejects the posting when it does not also list a US location
+    if any(x.lower() in loc for x in exclude) and not any(h in (" " + loc) for h in remote_hints):
         return False
     if not keywords:
         return True
