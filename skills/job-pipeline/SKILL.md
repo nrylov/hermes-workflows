@@ -79,6 +79,9 @@ All database commands: `python3 skills/job-pipeline/scripts/jobdb.py <cmd> [--db
 - Remote counts only for plain "Remote" or US-looking locations; extend `locations_exclude`.
 - A posting is stored at first sight, so it is never re-fetched; unscored ones stay in
   `pending` until scored, so a crashed run loses nothing.
+- Cron runs must not use `write_file` for staging: it refuses to overwrite a file the task
+  has not read, and Hermes then appends a "file edit FAILED" warning to the delivered message.
+  Stage with terminal redirects into unique names, or avoid files (stdout/stdin).
 - Keep `config.json`, `companies.json`, `profile.md`, `jobs.db` out of public repos.
 
 - The gateway may run on a different machine from the desktop app. Never `open` a URL from
