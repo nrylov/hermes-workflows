@@ -84,7 +84,10 @@ def title_ok(title, include, exclude):  # kept for simple callers/tests
     return title_class(title, {"title_include": include, "title_exclude": exclude}) == "match"
 
 
-REMOTE_HINTS = ("united states", "usa", "u.s.", "(us)", " us", "us-", "anywhere", "north america", "americas")
+REMOTE_HINTS = ("united states", "usa", "u.s.", "(us)", " us", "us-", "anywhere", "north america", "americas",
+                "no preference")
+# a bare country-wide label means "anywhere in the US", which is how boards list remote roles
+US_WIDE = ("united states", "us", "usa", "u.s.", "united states of america", "remote - no preference")
 
 
 def location_ok(job, keywords, exclude=(), remote_hints=REMOTE_HINTS):
@@ -99,8 +102,9 @@ def location_ok(job, keywords, exclude=(), remote_hints=REMOTE_HINTS):
     kws = [k.lower() for k in keywords]
     if any(k != "remote" and k in loc for k in kws):
         return True
-    if "remote" in kws and (job.get("remote") or "remote" in loc):
-        return loc.strip() in ("", "remote", "remote only") or any(h in (" " + loc) for h in remote_hints)
+    if "remote" in kws and (job.get("remote") or "remote" in loc or loc.strip() in US_WIDE):
+        return loc.strip() in ("", "remote", "remote only") or loc.strip() in US_WIDE \
+            or any(h in (" " + loc) for h in remote_hints)
     return False
 
 
