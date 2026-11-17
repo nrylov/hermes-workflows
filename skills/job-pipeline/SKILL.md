@@ -31,6 +31,8 @@ Private working dir (default `~/.hermes/job-pipeline/`, never committed):
 - `config.json`: filters, `max_age_days`, `companies_file` (see `examples/job_config.json`)
 - `companies.json`: boards to search (`scripts/build_company_list.py`)
 - `profile.md`: background, target roles, deal-breakers
+- `companies_exclude` (in `config.json`): board names never fetched (agencies, aggregators,
+  recruiters); also run `jobdb.py ignore-company NAME` to hide ones already stored
 - `jobs.db`: created by `scripts/jobdb.py`
 
 Python 3.8+, stdlib only. Optional: a Jina Reader API key (`$JINA_API_KEY` or

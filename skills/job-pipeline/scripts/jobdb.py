@@ -9,6 +9,8 @@ Commands (all take --db PATH; default ~/.hermes/job-pipeline/jobs.db):
   digest [--min-score 4] [--mark]   Markdown with links for scored, not-yet-notified postings
   report OUT.html [--min-score 3]   interactive HTML report
   status ID STATE            set a posting's status (new/applied/interested/ignored)
+  ignore-company NAME        mark all stored postings from a company as ignored (add it to
+                             `companies_exclude` in config.json to stop fetching it)
   stats                      counts
   import-csv FILE [--mark-notified] migrate an old tracker.csv
 """
@@ -138,12 +140,19 @@ def mark_notified(con, rows, now=None):
 
 def report_rows(con, min_score=1):
     out = []
-    for r in con.execute("SELECT * FROM jobs WHERE score >= ? ORDER BY score DESC, COALESCE(posted, first_seen) DESC",
-                         (min_score,)):
+    for r in con.execute("SELECT * FROM jobs WHERE score >= ? AND status != 'ignored'"
+                         " ORDER BY score DESC, COALESCE(posted, first_seen) DESC", (min_score,)):
         d = dict(r)
         d["posted"] = (d["posted"] or d["first_seen"] or "")[:10]
         out.append(d)
     return out
+
+
+def ignore_company(con, name):
+    """Mark every posting from a company (case-insensitive) as ignored. Returns rows changed."""
+    cur = con.execute("UPDATE jobs SET status='ignored' WHERE lower(company)=lower(?) AND status != 'ignored'", (name,))
+    con.commit()
+    return cur.rowcount
 
 
 def stats(con):
@@ -173,7 +182,7 @@ def import_csv(con, path, mark=False):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["init", "ingest", "pending", "score", "digest", "report", "status", "stats", "import-csv"])
+    ap.add_argument("cmd", choices=["init", "ingest", "pending", "score", "digest", "report", "status", "ignore-company", "stats", "import-csv"])
     ap.add_argument("args", nargs="*")
     ap.add_argument("--db", default=DEFAULT_DB)
     ap.add_argument("--limit", type=int, default=60)
@@ -213,6 +222,8 @@ def main(argv=None):
         cur = con.execute("UPDATE jobs SET status=? WHERE id=?", (a.args[1], a.args[0]))
         con.commit()
         print("updated %d" % cur.rowcount)
+    elif a.cmd == "ignore-company":
+        print("ignored %d" % ignore_company(con, a.args[0]))
     elif a.cmd == "stats":
         print(json.dumps(stats(con)))
     elif a.cmd == "import-csv":

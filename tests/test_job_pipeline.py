@@ -83,6 +83,10 @@ class JobTests(unittest.TestCase):
             cs = fj.load_companies({"companies": [{"name": "acme", "ats": "lever"}], "companies_file": p})
             self.assertEqual(len(cs), 2)
 
+    def test_companies_exclude(self):
+        cfg = {"companies": [{"name": "Clera", "ats": "ashby"}, {"name": "ok", "ats": "ashby"}], "companies_exclude": ["clera"]}
+        self.assertEqual([c["name"] for c in fj.load_companies(cfg)], ["ok"])
+
     def test_tracked_ids_missing_file(self):
         self.assertEqual(fj.tracked_ids("/nonexistent/t.csv"), set())
 

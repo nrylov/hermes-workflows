@@ -170,10 +170,11 @@ def load_companies(cfg):
     if cfg.get("companies_file"):
         with open(cfg["companies_file"]) as f:
             items += json.load(f)
+    blocked = {c.lower() for c in cfg.get("companies_exclude", [])}
     seen, out = set(), []
     for c in items:
         key = (c["ats"], c["name"].lower())
-        if key not in seen:
+        if key not in seen and c["name"].lower() not in blocked:
             seen.add(key)
             out.append(c)
     return out

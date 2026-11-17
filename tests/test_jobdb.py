@@ -64,6 +64,14 @@ class JobDbTests(unittest.TestCase):
         self.con.execute("UPDATE jobs SET status='ignored'")
         self.assertEqual(jobdb.digest_rows(self.con), [])
 
+    def test_ignore_company_hides_from_digest_and_report(self):
+        jobdb.ingest(self.con, [job("a", company="Clera"), job("b", company="ok")])
+        jobdb.apply_scores(self.con, [{"id": "a", "score": 5}, {"id": "b", "score": 5}])
+        self.assertEqual(jobdb.ignore_company(self.con, "clera"), 1)
+        self.assertEqual([r["id"] for r in jobdb.digest_rows(self.con)], ["b"])
+        self.assertEqual([r["id"] for r in jobdb.report_rows(self.con)], ["b"])
+        self.assertEqual(jobdb.ignore_company(self.con, "clera"), 0)
+
     def test_stats_and_report_rows(self):
         jobdb.ingest(self.con, [job("a"), job("b")])
         jobdb.apply_scores(self.con, [{"id": "a", "score": 4}])
