@@ -76,6 +76,8 @@
     "sunnyvale"
   ],
   "max_per_run": 40,
+  "requests_per_second": 20,
+  "max_retries": 3,
   "description_chars": 3000,
   "max_age_days": 7,
   "title_generic": [

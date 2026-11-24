@@ -10,6 +10,9 @@ import html
 import json
 import re
 import sys
+import threading
+import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
@@ -21,6 +24,52 @@ def http_json(url, timeout=25):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return json.load(r)
+
+
+class PacedFetcher:
+    """Shared rate limiter plus 429 retry for ATS APIs.
+
+    Greenhouse answers bursts (~24 parallel workers) with HTTP 429 on thousands of boards.
+    One shared slot schedule keeps all workers under `requests_per_second`; 429s are retried
+    after Retry-After (or exponential backoff) and only then counted as failures.
+    """
+
+    def __init__(self, requests_per_second=20.0, max_retries=3, timeout=25):
+        self.interval = 1.0 / float(requests_per_second)
+        self.max_retries = int(max_retries)
+        self.timeout = timeout
+        self._lock = threading.Lock()
+        self._next = 0.0
+        self.stats = {"requests": 0, "retries_429": 0, "gave_up": 0}
+
+    def _slot(self):
+        with self._lock:
+            at = max(time.time(), self._next)
+            self._next = at + self.interval
+        delay = at - time.time()
+        if delay > 0:
+            time.sleep(delay)
+
+    def __call__(self, url):
+        for attempt in range(self.max_retries + 1):
+            self._slot()
+            with self._lock:
+                self.stats["requests"] += 1
+            try:
+                return http_json(url, timeout=self.timeout)
+            except urllib.error.HTTPError as e:
+                if e.code != 429 or attempt >= self.max_retries:
+                    if e.code == 429:
+                        with self._lock:
+                            self.stats["gave_up"] += 1
+                    raise
+                with self._lock:
+                    self.stats["retries_429"] += 1
+                try:
+                    wait = float(e.headers.get("Retry-After") or 5.0 * (2 ** attempt))
+                except ValueError:
+                    wait = 5.0 * (2 ** attempt)
+                time.sleep(min(wait, 60))
 
 
 def strip_html(text):
@@ -192,7 +241,13 @@ def tracked_ids(path):
         return set()
 
 
-def collect(cfg, workers=24, fetcher=http_json, now=None, log=sys.stderr):
+def collect(cfg, workers=8, fetcher=None, now=None, log=sys.stderr):
+    if fetcher is None:
+        fetcher = PacedFetcher(
+            requests_per_second=cfg.get("requests_per_second", 20),
+            max_retries=cfg.get("max_retries", 3),
+        )
+
     def one(c):
         try:
             return fetch_company(c, cfg, fetcher=fetcher, now=now), None
@@ -213,7 +268,7 @@ def main(argv=None):
     ap.add_argument("config")
     ap.add_argument("--tracker", help="tracker.csv; jobs already in it are skipped")
     ap.add_argument("--max", type=int, help="override config max_per_run")
-    ap.add_argument("--workers", type=int, default=24)
+    ap.add_argument("--workers", type=int, default=8)
     args = ap.parse_args(argv)
 
     with open(args.config) as f:

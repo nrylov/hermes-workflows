@@ -77,6 +77,9 @@ All database commands: `python3 skills/job-pipeline/scripts/jobdb.py <cmd> [--db
 
 - Greenhouse list view has no description: the fetcher filters on age/title/location
   first and fetches detail only for survivors.
+- Greenhouse rate-limits bursts: HTTP 429 on thousands of boards when a sweep sends ~9k requests in ~100 s (24 workers). Dead boards return 404 (~100 per sweep). Classify errors by status before concluding anything; the summary line only counts failures. Probe the full set, not a sample: a 600-board sample showed almost no 429s and missed the burst.
+- Fix: `fetch_jobs.PacedFetcher` shares one slot schedule across workers (`requests_per_second`, default 20; `max_retries`, default 3, honoring `Retry-After`). Measured on the Greenhouse API: 10/s and 20/s gave zero 429s over 1,000 requests; 25/s hit 429 after ~500 requests. Keep 20/s or lower; do not raise the worker count to compensate. A full sweep at 20/s takes ~10 min.
+- A full scan reports `boards failed` near the dead-board count (~100), not thousands. A count in the thousands means the pacing config was lost or the rate was raised.
 - Generic titles pass only with `min_keyword_hits` of `description_keywords` in the text.
 - Remote counts only for plain "Remote" or US-looking locations; extend `locations_exclude`.
 - A posting is stored at first sight, so it is never re-fetched; unscored ones stay in
